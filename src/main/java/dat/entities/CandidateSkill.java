@@ -8,17 +8,17 @@ import lombok.*;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class CandidateSkill {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
-    //Relations
-
-    @ManyToOne(fetch = FetchType.EAGER)
+    // Relations
+    @ManyToOne(fetch = FetchType.LAZY)
     private Candidate candidate;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     private Skill skill;
 }

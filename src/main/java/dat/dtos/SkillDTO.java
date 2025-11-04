@@ -1,7 +1,6 @@
 package dat.dtos;
 
 import dat.entities.Skill;
-import dat.enums.SkillCategory;
 import lombok.*;
 
 @Getter
@@ -12,22 +11,15 @@ import lombok.*;
 public class SkillDTO {
     private int id;
     private String name;
-    private SkillCategory category;
-    private String description;
+    private String slug;
+    private Integer popularityScore;
+    private Integer averageSalary;
 
-    public SkillDTO(Skill s) {
-        this.id = s.getId();
-        this.name = s.getName();
-        this.category = s.getCategory();
-        this.description = s.getDescription();
-    }
-
-    public Skill toEntity() {
-        return Skill.builder()
-                .id(this.id)
-                .name(this.name)
-                .category(this.category)
-                .description(this.description)
-                .build();
+    public SkillDTO(Skill skill) {
+        this.id = skill.getId();
+        this.name = skill.getName();
+        this.slug = skill.getSlug();
+        this.popularityScore = skill.getPopularityScore();
+        this.averageSalary = skill.getAverageSalary();
     }
 }

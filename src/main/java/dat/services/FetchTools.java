@@ -46,14 +46,13 @@ public class FetchTools {
         return null;
     }
 
-
     public <T> T postToApi(String uri, Class<T> dtoClass) {
         return postToApi(uri,dtoClass, HttpRequest.BodyPublishers.noBody(),new String[] {"Accept", "application/json"});
     }
 
     public <T> T postToApi(String uri, Class<T> dtoClass, HttpRequest.BodyPublisher body, String[] headers) {
 
-        ObjectMapper objectMapper = new ObjectMapper(); // Jackson prep
+        ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
         objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
@@ -79,7 +78,6 @@ public class FetchTools {
         }
         return null;
     }
-
 
     public <T> List<T> getFromApiList(List<String> endpoints, Class<T> dto) {
         List<T> responses = new ArrayList<>();
@@ -121,7 +119,6 @@ public class FetchTools {
         }
         return responses;
     }
-
 
     private static ExecutorService createThreadPool(int threadPoolSize) {
         int cores = Runtime.getRuntime().availableProcessors();

@@ -1,23 +1,31 @@
+
 ### Healthcheck
 GET {{url}}/auth/healthcheck
 
-### A simple get request to the test endpoint. No need for login
+### A simple test endpoint (no login required)
 GET {{url}}/auth/test/
 
-### Create a new user - this one will only get a USER role by default
+### Create a new user (gets USER role by default)
 POST {{url}}/auth/register/
+Content-Type: application/json
 
 {
-    "username": "user",
-    "password": "test123"
+  "username": "user",
+  "password": "test123"
 }
 
-###
+> {%
+    client.global.set("jwt_token", response.body.token);
+    console.log("JWT Token:", client.global.get("jwt_token"));
+%}
+
+### Login as user
 POST {{url}}/auth/login/
+Content-Type: application/json
 
 {
-    "username": "user",
-    "password": "test123"
+  "username": "user",
+  "password": "test123"
 }
 
 > {%
@@ -32,4 +40,60 @@ Authorization: Bearer {{jwt_token}}
 
 {
     "role": "admin"
+}
+
+### Get all candidates (anyone)
+GET {{url}}/candidates
+Accept: application/json
+
+### Filter candidates by skill category (e.g. DB, PROG_LANG, TESTING)
+GET {{url}}/candidates?category=DB
+Accept: application/json
+
+### Get candidate by ID (anyone)
+GET {{url}}/candidates/1
+Accept: application/json
+
+### Create new candidate (USER or ADMIN)
+POST {{url}}/candidates
+Content-Type: application/json
+Authorization: Bearer {{jwt_token}}
+
+{
+  "name": "Karim Zidan",
+  "phone": "50501234",
+  "education": "Backend Development"
+}
+
+### Update existing candidate (USER or ADMIN)
+PUT {{url}}/candidates/1
+Content-Type: application/json
+Authorization: Bearer {{jwt_token}}
+
+{
+  "name": "Karim Zidan Updated",
+  "phone": "50501234",
+  "education": "Fullstack Developer"
+}
+
+### Delete candidate (ADMIN only)
+DELETE {{url}}/candidates/1
+Authorization: Bearer {{jwt_token}}
+
+### Link existing skill to candidate (ADMIN only)
+PUT {{url}}/candidates/2/skills/2
+Authorization: Bearer {{jwt_token}}
+
+### Get candidate including market insights from external API (US-5)
+GET {{url}}/candidates/2/marketdata
+Accept: application/json
+
+### Unauthorized example (should return 401 if token missing)
+POST {{url}}/candidates
+Content-Type: application/json
+
+{
+  "name": "Should Fail",
+  "phone": "00000000",
+  "education": "None"
 }

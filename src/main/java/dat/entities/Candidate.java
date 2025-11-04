@@ -2,6 +2,7 @@ package dat.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
+
 import java.util.HashSet;
 import java.util.Set;
 
@@ -11,7 +12,6 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@EqualsAndHashCode(of = {"id"})
 public class Candidate {
 
     @Id
@@ -22,24 +22,21 @@ public class Candidate {
     private String phone;
     private String education;
 
-    //Relations
-
+    // Relations
     @OneToMany(mappedBy = "candidate", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private Set<CandidateSkill> skillLinks = new HashSet<>();
 
-    //Bidirectional
-
-    public void addSkillLink(CandidateSkill link) {
+    // Bidirectional
+    public void addSkill(Skill skill) {
+        CandidateSkill link = new CandidateSkill();
+        link.setCandidate(this);
+        link.setSkill(skill);
         this.skillLinks.add(link);
-        if (link != null) {
-            link.setCandidate(this);
-        }
+        skill.getCandidateLinks().add(link);
     }
 
-    public void removeSkillLink(CandidateSkill link) {
-        this.skillLinks.remove(link);
-        if (link != null) {
-            link.setCandidate(null);
-        }
+    public void removeSkill(Skill skill) {
+        skillLinks.removeIf(link -> link.getSkill().equals(skill));
+        skill.getCandidateLinks().removeIf(link -> link.getCandidate().equals(this));
     }
 }

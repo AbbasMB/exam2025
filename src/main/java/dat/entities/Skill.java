@@ -3,6 +3,7 @@ package dat.entities;
 import dat.enums.SkillCategory;
 import jakarta.persistence.*;
 import lombok.*;
+
 import java.util.HashSet;
 import java.util.Set;
 
@@ -12,7 +13,6 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@EqualsAndHashCode(of = {"id"})
 public class Skill {
 
     @Id
@@ -26,24 +26,25 @@ public class Skill {
 
     private String description;
 
-    //Relations
+    private String slug;
+    private Integer popularityScore;
+    private Integer averageSalary;
 
+    // Relations
     @OneToMany(mappedBy = "skill", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private Set<CandidateSkill> candidateLinks = new HashSet<>();
 
-    //Bidirectional
-
-    public void addCandidateLink(CandidateSkill link) {
+    // Bidirectional
+    public void addCandidate(Candidate candidate) {
+        CandidateSkill link = new CandidateSkill();
+        link.setSkill(this);
+        link.setCandidate(candidate);
         this.candidateLinks.add(link);
-        if (link != null) {
-            link.setSkill(this);
-        }
+        candidate.getSkillLinks().add(link);
     }
 
-    public void removeCandidateLink(CandidateSkill link) {
-        this.candidateLinks.remove(link);
-        if (link != null) {
-            link.setSkill(null);
-        }
+    public void removeCandidate(Candidate candidate) {
+        candidateLinks.removeIf(link -> link.getCandidate().equals(candidate));
+        candidate.getSkillLinks().removeIf(link -> link.getSkill().equals(this));
     }
 }

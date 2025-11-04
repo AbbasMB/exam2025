@@ -14,7 +14,8 @@ public class CandidateRoutes {
         controller = CandidateController.getInstance();
         return () -> {
             get("/", controller::getAll,  Role.ANYONE);
-            get("/filterCategories", controller::getFilteredCandidates, Role.USER);
+            get("/filteredCategories", controller::getFilteredCandidates, Role.USER);
+            get("/{id}/marketdata", controller::getCandidateWithMarketData, Role.ANYONE);
             get("/{id}", controller::getById, Role.ANYONE);
             post("/", controller::create, Role.USER);
             put("/{id}", controller::update, Role.USER);

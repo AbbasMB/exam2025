@@ -76,12 +76,16 @@ public class CandidateDAO implements IDAO<Candidate, Integer> {
     @Override
     public List<Candidate> getAll() {
         try (EntityManager em = emf.createEntityManager()) {
-            TypedQuery<Candidate> query = em.createQuery("SELECT c FROM Candidate c", Candidate.class);
-            return query.getResultList();
-        } catch (Exception e) {
-            throw new DatabaseException("Failed to fetch all candidates", e);
+            return em.createQuery(
+                    "SELECT DISTINCT c FROM Candidate c " +
+                            "LEFT JOIN FETCH c.skillLinks sl " +
+                            "LEFT JOIN FETCH sl.skill",
+                    Candidate.class
+            ).getResultList();
         }
     }
+
+
 
     public Candidate linkSkillToCandidate(int candidateId, int skillId) {
         try (EntityManager em = emf.createEntityManager()) {
@@ -94,10 +98,8 @@ public class CandidateDAO implements IDAO<Candidate, Integer> {
             if (skill == null) {
                 throw new DatabaseException("Skill with id " + skillId + " not found");
             }
-            CandidateSkill link = new CandidateSkill();
-            candidate.addSkillLink(link);
-            skill.addCandidateLink(link);
-            em.persist(link);
+            candidate.addSkill(skill);
+            em.merge(candidate);
             em.getTransaction().commit();
             return candidate;
         } catch (DatabaseException e) {

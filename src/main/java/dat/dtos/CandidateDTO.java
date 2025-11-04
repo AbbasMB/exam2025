@@ -1,7 +1,10 @@
 package dat.dtos;
 
 import dat.entities.Candidate;
+import dat.entities.CandidateSkill;
 import lombok.*;
+
+import java.util.List;
 
 @Getter
 @Setter
@@ -13,20 +16,16 @@ public class CandidateDTO {
     private String name;
     private String phone;
     private String education;
+    private List<SkillDTO> skills;
 
-    public CandidateDTO(Candidate c) {
-        this.id = c.getId();
-        this.name = c.getName();
-        this.phone = c.getPhone();
-        this.education = c.getEducation();
-    }
+    public CandidateDTO(Candidate candidate) {
+        this.id = candidate.getId();
+        this.name = candidate.getName();
+        this.phone = candidate.getPhone();
+        this.education = candidate.getEducation();
 
-    public Candidate toEntity() {
-        return Candidate.builder()
-                .id(this.id)
-                .name(this.name)
-                .phone(this.phone)
-                .education(this.education)
-                .build();
+        this.skills = candidate.getSkillLinks().stream()
+                .map(link -> new SkillDTO(link.getSkill()))
+                .toList();
     }
 }

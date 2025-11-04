@@ -74,7 +74,7 @@ public class SkillDAO implements IDAO<Skill, Integer> {
     @Override
     public List<Skill> getAll() {
         try (EntityManager em = emf.createEntityManager()) {
-            TypedQuery<Skill> query = em.createQuery("SELECT s FROM Skill s", Skill.class);
+            TypedQuery<Skill> query = em.createQuery("SELECT s FROM Skill s LEFT JOIN FETCH s.candidateLinks", Skill.class);
             return query.getResultList();
         } catch (Exception e) {
             throw new DatabaseException("Failed to fetch all skills", e);

@@ -1,23 +1,29 @@
 package dat.controllers;
 
-import dat.config.HibernateConfig;
 import dat.daos.CandidateDAO;
-import dat.daos.SkillDAO;
+import dat.dtos.CandidateDTO;
+import dat.dtos.CandidateMarketDataDTO;
 import dat.entities.Candidate;
 import dat.enums.SkillCategory;
 import dat.exceptions.DatabaseException;
+import dat.services.FetchTools;
+import dat.services.SkillStatsService;
 import io.javalin.http.Context;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.EntityNotFoundException;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 
 public class CandidateController implements IController {
 
     private static CandidateController instance;
     private CandidateDAO candidateDAO;
     private EntityManagerFactory emf;
+    private SkillStatsService skillStatsService;
+    CandidateMarketDataDTO candidateMarketDataDTO;
 
     private CandidateController() {}
 
@@ -31,14 +37,18 @@ public class CandidateController implements IController {
     public void setEmf(EntityManagerFactory emf) {
         this.emf = emf;
         this.candidateDAO = new CandidateDAO(emf);
+        this.skillStatsService = new SkillStatsService(new FetchTools());
     }
 
     @Override
     public void getAll(Context ctx) {
-        List<Candidate> candidates = candidateDAO.getAll();
-        ctx.json(candidates);
-        ctx.status(200);
+        List<CandidateDTO> dtos = candidateDAO.getAll()
+                .stream()
+                .map(CandidateDTO::new)
+                .toList();
+        ctx.status(200).json(dtos);
     }
+
 
     @Override
     public void getById(Context ctx) {
@@ -61,7 +71,6 @@ public class CandidateController implements IController {
         int id = ctx.pathParamAsClass("id", Integer.class).get();
         Candidate updatedData = ctx.bodyAsClass(Candidate.class);
         updatedData.setId(id);
-
         Candidate updated = candidateDAO.update(updatedData);
         ctx.json(updated);
         ctx.status(200);
@@ -113,4 +122,35 @@ public class CandidateController implements IController {
         }
     }
 
+    public void getCandidateWithMarketData(Context ctx) {
+        int id = ctx.pathParamAsClass("id", Integer.class).get();
+        Candidate candidate = candidateDAO.getById(id);
+        if (candidate == null) {
+            throw new EntityNotFoundException("Candidate with id " + id + " not found");
+        }
+        List<String> slugs = candidate.getSkillLinks().stream()
+                .map(link -> link.getSkill().getSlug())
+                .filter(Objects::nonNull)
+                .toList();
+        if (!slugs.isEmpty()) {
+            try {
+                var response = skillStatsService.getSkillStats(slugs);
+                // Match market data til lokale skills
+                candidate.getSkillLinks().forEach(link -> {
+                    var skill = link.getSkill();
+                    response.getData().stream()
+                            .filter(stat -> stat.getSlug().equalsIgnoreCase(skill.getSlug()))
+                            .findFirst()
+                            .ifPresent(stat -> {
+                                skill.setPopularityScore(stat.getPopularityScore());
+                                skill.setAverageSalary(stat.getAverageSalary());
+                            });
+                });
+            } catch (Exception e) {
+                throw new DatabaseException(500, "Failed to fetch skill statistics", e);
+            }
+        }
+        CandidateDTO dto = new CandidateDTO(candidate);
+        ctx.status(200).json(dto);
+    }
 }

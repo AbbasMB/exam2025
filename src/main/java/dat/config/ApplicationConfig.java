@@ -1,6 +1,9 @@
 package dat.config;
 
+import dat.controllers.CandidateController;
 import dat.exceptions.DatabaseException;
+import dat.populator.CandidatePopulator;
+import dat.populator.SkillPopulator;
 import dat.routes.Routes;
 import dat.security.controllers.AccessController;
 import dat.security.enums.Role;
@@ -9,6 +12,7 @@ import io.javalin.Javalin;
 import io.javalin.config.JavalinConfig;
 import io.javalin.http.Context;
 import io.javalin.http.UnauthorizedResponse;
+import jakarta.persistence.EntityManagerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,9 +38,20 @@ public class ApplicationConfig {
 
         exceptions(app);
 
+        EntityManagerFactory emf = HibernateConfig.getEntityManagerFactory();
+
+        SkillPopulator.setEMF(emf);
+        SkillPopulator.populate();
+
+        CandidatePopulator.setEMF(emf);
+        CandidatePopulator.populate();
+
+        CandidateController.getInstance().setEmf(emf);
+
         app.start(port);
         return app;
     }
+
 
     private static void afterRequest(Context ctx) {
         String requestInfo = ctx.req().getMethod() + " " + ctx.req().getRequestURI();
