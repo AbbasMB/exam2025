@@ -1,20 +1,7 @@
 package dat.rest;
 
-import dat.populator.PopulatorTemplate;
-import dat.config.ApplicationConfig;
-import dat.config.HibernateConfig;
-import io.javalin.Javalin;
-import io.restassured.RestAssured;
-import io.restassured.http.ContentType;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.EntityManagerFactory;
-import org.junit.jupiter.api.*;
-
-import java.util.List;
-
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
 
 /*
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
