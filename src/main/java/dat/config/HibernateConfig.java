@@ -1,6 +1,7 @@
 package dat.config;
 
 import dat.entities.Candidate;
+import dat.entities.CandidateSkill;
 import dat.entities.Skill;
 import dat.security.entities.Role;
 import dat.security.entities.User;
