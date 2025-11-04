@@ -20,7 +20,7 @@ public class CandidateRoutes {
             post("/", controller::create, Role.USER);
             put("/{id}", controller::update, Role.USER);
             delete("/{id}", controller::delete, Role.USER);
-            put("/{candidateId}/skills/{skillId}", controller::linkSkill, Role.ADMIN);
+            put("/{candidateId}/skills/{skillId}", controller::linkSkill, Role.USER);
         };
     }
 }

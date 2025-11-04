@@ -1,66 +1,55 @@
 package dat.services;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import dat.exceptions.ApiException;
-import lombok.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import dat.dtos.SkillStatsResponseDTO;
 
-import java.time.ZonedDateTime;
+import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.List;
 
 public class SkillStatsService {
 
-    private final FetchTools fetchTools;
+    private static SkillStatsService instance;
+    private static final String API_URL = "https://apiprovider.cphbusinessapps.dk/api/v1/skills/stats?slugs=";
+    private final HttpClient client;
+    private final ObjectMapper mapper;
 
-    public SkillStatsService(FetchTools fetchTools) {
-        this.fetchTools = fetchTools;
+    private SkillStatsService() {
+        this.client = HttpClient.newHttpClient();
+        this.mapper = new ObjectMapper();
+        this.mapper.registerModule(new JavaTimeModule());
     }
 
-    public ResponseDTO getSkillStats(List<String> slugs) {
-        if (slugs == null || slugs.isEmpty()) {
-            return new ResponseDTO(List.of());
+    public static SkillStatsService getInstance() {
+        if (instance == null) {
+            instance = new SkillStatsService();
         }
-
-        String uri = buildUri(slugs);
-        ResponseDTO response = fetchTools.getFromApi(uri, ResponseDTO.class);
-
-        if (response == null) {
-            throw new ApiException(500, "Failed to fetch skill statistics from external API");
-        }
-
-        return response;
+        return instance;
     }
 
-    private static String buildUri(List<String> slugs) {
+    public SkillStatsResponseDTO getSkillStats(List<String> slugs) throws IOException, InterruptedException {
         String joined = String.join(",", slugs);
-        return "https://apiprovider.cphbusinessapps.dk/api/v1/skills/stats?slugs=" + joined;
-    }
+        String url = API_URL + joined;
 
-    @Data
-    @Getter
-    @Setter
-    @AllArgsConstructor
-    @NoArgsConstructor
-    @Builder
-    public static class ResponseDTO {
-        private List<SkillStatDTO> data;
-    }
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .GET()
+                .build();
 
-    @Data
-    @Getter
-    @Setter
-    @AllArgsConstructor
-    @NoArgsConstructor
-    @Builder
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    public static class SkillStatDTO {
-        private String id;
-        private String slug;
-        private String name;
-        private String category;
-        private String description;
-        private Integer popularityScore;
-        private Integer averageSalary;
-        private ZonedDateTime updatedAt;
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+        System.out.println("Requesting: " + url);
+        System.out.println("Status code: " + response.statusCode());
+        System.out.println("Response body: " + response.body());
+
+        if (response.statusCode() != 200) {
+            throw new IOException("Failed to fetch data from external API. Status code: " + response.statusCode());
+        }
+
+        return mapper.readValue(response.body(), SkillStatsResponseDTO.class);
     }
 }

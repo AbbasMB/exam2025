@@ -2,30 +2,30 @@ package dat.controllers;
 
 import dat.daos.CandidateDAO;
 import dat.dtos.CandidateDTO;
-import dat.dtos.CandidateMarketDataDTO;
 import dat.entities.Candidate;
+import dat.entities.Skill;
 import dat.enums.SkillCategory;
 import dat.exceptions.DatabaseException;
-import dat.services.FetchTools;
 import dat.services.SkillStatsService;
+import dat.dtos.SkillStatsResponseDTO;
 import io.javalin.http.Context;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.EntityNotFoundException;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 
 public class CandidateController implements IController {
 
-    private static CandidateController instance;
+    private static CandidateController instance; // ✅ Singleton instance
     private CandidateDAO candidateDAO;
-    private EntityManagerFactory emf;
-    private SkillStatsService skillStatsService;
-    CandidateMarketDataDTO candidateMarketDataDTO;
+    private final SkillStatsService skillStatsService;
 
-    private CandidateController() {}
+    private CandidateController() {
+        this.skillStatsService = SkillStatsService.getInstance();
+    }
 
     public static CandidateController getInstance() {
         if (instance == null) {
@@ -35,45 +35,36 @@ public class CandidateController implements IController {
     }
 
     public void setEmf(EntityManagerFactory emf) {
-        this.emf = emf;
         this.candidateDAO = new CandidateDAO(emf);
-        this.skillStatsService = new SkillStatsService(new FetchTools());
     }
 
     @Override
     public void getAll(Context ctx) {
-        List<CandidateDTO> dtos = candidateDAO.getAll()
-                .stream()
-                .map(CandidateDTO::new)
-                .toList();
-        ctx.status(200).json(dtos);
+        List<Candidate> candidates = candidateDAO.getAll();
+        ctx.status(200).json(candidates.stream().map(CandidateDTO::new).toList());
     }
-
 
     @Override
     public void getById(Context ctx) {
         int id = ctx.pathParamAsClass("id", Integer.class).get();
         Candidate candidate = candidateDAO.getById(id);
-        ctx.json(candidate);
-        ctx.status(200);
+        ctx.status(200).json(new CandidateDTO(candidate));
     }
 
     @Override
     public void create(Context ctx) {
         Candidate candidate = ctx.bodyAsClass(Candidate.class);
         Candidate created = candidateDAO.create(candidate);
-        ctx.json(created);
-        ctx.status(201);
+        ctx.status(201).json(new CandidateDTO(created));
     }
 
     @Override
     public void update(Context ctx) {
         int id = ctx.pathParamAsClass("id", Integer.class).get();
-        Candidate updatedData = ctx.bodyAsClass(Candidate.class);
-        updatedData.setId(id);
-        Candidate updated = candidateDAO.update(updatedData);
-        ctx.json(updated);
-        ctx.status(200);
+        Candidate body = ctx.bodyAsClass(Candidate.class);
+        body.setId(id);
+        Candidate updated = candidateDAO.update(body);
+        ctx.status(200).json(new CandidateDTO(updated));
     }
 
     @Override
@@ -83,19 +74,6 @@ public class CandidateController implements IController {
         ctx.status(204);
     }
 
-    public void linkSkill(Context ctx) {
-        int candidateId = ctx.pathParamAsClass("candidateId", Integer.class).get();
-        int skillId = ctx.pathParamAsClass("skillId", Integer.class).get();
-
-        try {
-            Candidate updated = candidateDAO.linkSkillToCandidate(candidateId, skillId);
-            ctx.json(updated);
-            ctx.status(200);
-        } catch (Exception e) {
-            throw new DatabaseException(500, "Could not link candidate and skill", e);
-        }
-    }
-
     public void getFilteredCandidates(Context ctx) {
         List<Candidate> candidates = candidateDAO.getAll();
         String categoryParam = ctx.queryParam("category");
@@ -103,22 +81,37 @@ public class CandidateController implements IController {
             try {
                 SkillCategory category = SkillCategory.valueOf(categoryParam.toUpperCase());
                 candidates = candidates.stream()
-                        .filter(candidate -> candidate.getSkillLinks().stream()
-                                .anyMatch(link -> link.getSkill().getCategory() == category))
+                        .filter(c -> c.getSkillLinks().stream()
+                                .anyMatch(l -> l.getSkill().getCategory() == category))
                         .toList();
-                ctx.json(candidates);
-                ctx.status(200);
             } catch (IllegalArgumentException e) {
-                ctx.status(400);
-                ctx.json(Map.of(
+                ctx.status(400).json(Map.of(
                         "status", 400,
                         "error", "Invalid category: " + categoryParam
                 ));
                 return;
             }
-        } else {
-            ctx.json(candidates);
-            ctx.status(200);
+        }
+        ctx.status(200).json(candidates.stream().map(CandidateDTO::new).toList());
+    }
+
+    public void linkSkill(Context ctx) {
+        int candidateId = ctx.pathParamAsClass("candidateId", Integer.class).get();
+        int skillId = ctx.pathParamAsClass("skillId", Integer.class).get();
+
+        try {
+            Candidate updatedCandidate = candidateDAO.linkSkillToCandidate(candidateId, skillId);
+            ctx.status(200).json(new CandidateDTO(updatedCandidate));
+        } catch (DatabaseException e) {
+            ctx.status(400).json(Map.of(
+                    "status", 400,
+                    "error", e.getMessage()
+            ));
+        } catch (Exception e) {
+            ctx.status(500).json(Map.of(
+                    "status", 500,
+                    "error", "Unexpected error linking skill to candidate"
+            ));
         }
     }
 
@@ -134,10 +127,13 @@ public class CandidateController implements IController {
                 .toList();
         if (!slugs.isEmpty()) {
             try {
-                var response = skillStatsService.getSkillStats(slugs);
-                // Match market data til lokale skills
+                SkillStatsResponseDTO response = skillStatsService.getSkillStats(slugs);
+
+                if (response == null || response.getData() == null) {
+                    throw new DatabaseException(500, "No market data returned from API");
+                }
                 candidate.getSkillLinks().forEach(link -> {
-                    var skill = link.getSkill();
+                    Skill skill = link.getSkill();
                     response.getData().stream()
                             .filter(stat -> stat.getSlug().equalsIgnoreCase(skill.getSlug()))
                             .findFirst()
@@ -146,11 +142,14 @@ public class CandidateController implements IController {
                                 skill.setAverageSalary(stat.getAverageSalary());
                             });
                 });
+            } catch (IOException | InterruptedException e) {
+                throw new DatabaseException(500, "Failed to fetch skill statistics from external API", e);
             } catch (Exception e) {
-                throw new DatabaseException(500, "Failed to fetch skill statistics", e);
+                throw new DatabaseException(500, "Unexpected error while fetching skill statistics", e);
             }
         }
         CandidateDTO dto = new CandidateDTO(candidate);
         ctx.status(200).json(dto);
     }
+
 }

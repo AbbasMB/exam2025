@@ -25,15 +25,44 @@ public class SkillPopulator {
     }
 
     public static void populate() {
+        if (hasPopulated) return;
+
         data = new ArrayList<>();
 
-        data.add(Skill.builder().name("Java").category(SkillCategory.PROG_LANG).description("Programming language").build());
-        data.add(Skill.builder().name("PostgreSQL").category(SkillCategory.DB).description("Relational database system").build());
-        data.add(Skill.builder().name("Docker").category(SkillCategory.DEVOPS).description("Containerization tool").build());
-        data.add(Skill.builder().name("HTML").category(SkillCategory.FRONTEND).description("Frontend markup language").build());
-        data.add(Skill.builder().name("JUnit").category(SkillCategory.TESTING).description("Testing framework for Java").build());
-        data.add(Skill.builder().name("Power BI").category(SkillCategory.DATA).description("Data analysis and visualization tool").build());
-        data.add(Skill.builder().name("Spring Boot").category(SkillCategory.FRAMEWORK).description("Java web framework").build());
+        data.add(Skill.builder()
+                .name("Java")
+                .slug("java")
+                .category(SkillCategory.PROG_LANG)
+                .description("General-purpose, strongly-typed language for backend and Android.")
+                .build());
+
+        data.add(Skill.builder()
+                .name("Spring Boot")
+                .slug("spring-boot")
+                .category(SkillCategory.FRAMEWORK)
+                .description("Java framework for building microservices and REST APIs.")
+                .build());
+
+        data.add(Skill.builder()
+                .name("PostgreSQL")
+                .slug("postgresql")
+                .category(SkillCategory.DB)
+                .description("Open-source relational database with strong SQL compliance.")
+                .build());
+
+        data.add(Skill.builder()
+                .name("Docker")
+                .slug("docker")
+                .category(SkillCategory.DEVOPS)
+                .description("Container platform for deploying and running applications.")
+                .build());
+
+        data.add(Skill.builder()
+                .name("JUnit")
+                .slug("junit")
+                .category(SkillCategory.TESTING)
+                .description("Unit testing framework for Java applications.")
+                .build());
 
         data.forEach(skillDAO::create);
         hasPopulated = true;

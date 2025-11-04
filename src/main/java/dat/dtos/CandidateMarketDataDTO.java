@@ -1,6 +1,6 @@
 package dat.dtos;
 
-import dat.services.SkillStatsService.SkillStatDTO;
+import dat.dtos.SkillStatDTO;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

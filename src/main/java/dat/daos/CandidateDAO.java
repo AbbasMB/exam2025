@@ -1,12 +1,11 @@
 package dat.daos;
 
 import dat.entities.Candidate;
-import dat.entities.CandidateSkill;
 import dat.entities.Skill;
 import dat.exceptions.DatabaseException;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
-import jakarta.persistence.TypedQuery;
+
 import java.util.List;
 
 public class CandidateDAO implements IDAO<Candidate, Integer> {
@@ -18,73 +17,71 @@ public class CandidateDAO implements IDAO<Candidate, Integer> {
     }
 
     @Override
-    public Candidate create(Candidate candidate) {
+    public Candidate create(Candidate entity) {
         try (EntityManager em = emf.createEntityManager()) {
             em.getTransaction().begin();
-            em.persist(candidate);
+            em.persist(entity);
             em.getTransaction().commit();
-            return candidate;
+            return entity;
         } catch (Exception e) {
             throw new DatabaseException("Failed to create candidate", e);
         }
     }
 
     @Override
-    public Candidate update(Candidate candidate) {
+    public Candidate update(Candidate entity) {
         try (EntityManager em = emf.createEntityManager()) {
             em.getTransaction().begin();
-            Candidate updated = em.merge(candidate);
+            Candidate updated = em.merge(entity);
             em.getTransaction().commit();
             return updated;
         } catch (Exception e) {
-            throw new DatabaseException("Failed to update candidate with id " + candidate.getId(), e);
+            throw new DatabaseException("Failed to update candidate", e);
         }
     }
 
     @Override
     public void delete(Integer id) {
         try (EntityManager em = emf.createEntityManager()) {
-            em.getTransaction().begin();
             Candidate candidate = em.find(Candidate.class, id);
             if (candidate == null) {
                 throw new DatabaseException("Candidate with id " + id + " not found");
             }
+            em.getTransaction().begin();
             em.remove(candidate);
             em.getTransaction().commit();
-        } catch (DatabaseException e) {
-            throw e;
         } catch (Exception e) {
-            throw new DatabaseException("Failed to delete candidate with id " + id, e);
+            throw new DatabaseException("Failed to delete candidate", e);
         }
     }
 
     @Override
     public Candidate getById(Integer id) {
         try (EntityManager em = emf.createEntityManager()) {
-            Candidate candidate = em.find(Candidate.class, id);
-            if (candidate == null) {
-                throw new DatabaseException("Candidate with id " + id + " not found");
-            }
-            return candidate;
-        } catch (DatabaseException e) {
-            throw e;
+            return em.createQuery(
+                            "SELECT DISTINCT c FROM Candidate c " +
+                                    "LEFT JOIN FETCH c.skillLinks sl " +
+                                    "LEFT JOIN FETCH sl.skill s " +
+                                    "WHERE c.id = :id",
+                            Candidate.class
+                    )
+                    .setParameter("id", id)
+                    .getSingleResult();
         } catch (Exception e) {
-            throw new DatabaseException("Error fetching candidate with id " + id, e);
+            throw new DatabaseException("Failed to fetch candidate with id " + id, e);
         }
     }
 
-    @Override
     public List<Candidate> getAll() {
         try (EntityManager em = emf.createEntityManager()) {
             return em.createQuery(
-                    "SELECT DISTINCT c FROM Candidate c " +
-                            "LEFT JOIN FETCH c.skillLinks sl " +
-                            "LEFT JOIN FETCH sl.skill",
+                    "SELECT DISTINCT c FROM Candidate c LEFT JOIN FETCH c.skillLinks sl LEFT JOIN FETCH sl.skill s",
                     Candidate.class
             ).getResultList();
+        } catch (Exception e) {
+            throw new DatabaseException("Failed to fetch candidates", e);
         }
     }
-
 
 
     public Candidate linkSkillToCandidate(int candidateId, int skillId) {
@@ -98,14 +95,16 @@ public class CandidateDAO implements IDAO<Candidate, Integer> {
             if (skill == null) {
                 throw new DatabaseException("Skill with id " + skillId + " not found");
             }
-            candidate.addSkill(skill);
-            em.merge(candidate);
+            boolean alreadyLinked = candidate.getSkillLinks().stream()
+                    .anyMatch(link -> link.getSkill().getId() == skillId);
+            if (!alreadyLinked) {
+                candidate.addSkill(skill);
+                em.merge(candidate);
+            }
             em.getTransaction().commit();
             return candidate;
-        } catch (DatabaseException e) {
-            throw e;
         } catch (Exception e) {
-            throw new DatabaseException("Failed to link candidate " + candidateId + " and skill " + skillId, e);
+            throw new DatabaseException("Failed to link candidate and skill", e);
         }
     }
 }

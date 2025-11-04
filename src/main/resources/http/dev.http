@@ -42,7 +42,7 @@ Authorization: Bearer {{jwt_token}}
     "role": "admin"
 }
 
-### Get all candidates (anyone)
+### Get all candidates
 GET {{url}}/candidates
 Accept: application/json
 
@@ -50,11 +50,11 @@ Accept: application/json
 GET {{url}}/candidates?category=DB
 Accept: application/json
 
-### Get candidate by ID (anyone)
+### Get candidate by ID
 GET {{url}}/candidates/1
 Accept: application/json
 
-### Create new candidate (USER or ADMIN)
+### Create new candidate
 POST {{url}}/candidates
 Content-Type: application/json
 Authorization: Bearer {{jwt_token}}
@@ -65,7 +65,7 @@ Authorization: Bearer {{jwt_token}}
   "education": "Backend Development"
 }
 
-### Update existing candidate (USER or ADMIN)
+### Update existing candidate
 PUT {{url}}/candidates/1
 Content-Type: application/json
 Authorization: Bearer {{jwt_token}}
@@ -76,24 +76,16 @@ Authorization: Bearer {{jwt_token}}
   "education": "Fullstack Developer"
 }
 
-### Delete candidate (ADMIN only)
+### Delete candidate
 DELETE {{url}}/candidates/1
 Authorization: Bearer {{jwt_token}}
 
-### Link existing skill to candidate (ADMIN only)
+### Link existing skill to candidate
 PUT {{url}}/candidates/2/skills/2
 Authorization: Bearer {{jwt_token}}
 
-### Get candidate including market insights from external API (US-5)
+### Get candidate including market insights from external API
 GET {{url}}/candidates/2/marketdata
 Accept: application/json
 
-### Unauthorized example (should return 401 if token missing)
-POST {{url}}/candidates
-Content-Type: application/json
 
-{
-  "name": "Should Fail",
-  "phone": "00000000",
-  "education": "None"
-}

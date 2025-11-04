@@ -52,7 +52,6 @@ public class ApplicationConfig {
         return app;
     }
 
-
     private static void afterRequest(Context ctx) {
         String requestInfo = ctx.req().getMethod() + " " + ctx.req().getRequestURI();
         logger.info(" Request {} - {} was handled with status code {}", count++, requestInfo, ctx.status());

@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -23,8 +24,8 @@ public class Candidate {
     private String education;
 
     // Relations
-    @OneToMany(mappedBy = "candidate", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private Set<CandidateSkill> skillLinks = new HashSet<>();
+    @OneToMany(mappedBy = "candidate", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    private List<CandidateSkill> skillLinks;
 
     // Bidirectional
     public void addSkill(Skill skill) {
