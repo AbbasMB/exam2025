@@ -13,7 +13,8 @@ public class CandidateRoutes {
     public static EndpointGroup getRoutes() {
         controller = CandidateController.getInstance();
         return () -> {
-            get("/", controller::getAll, Role.ANYONE);
+            get("/", controller::getAll,  Role.ANYONE);
+            get("/filterCategories", controller::getFilteredCandidates, Role.USER);
             get("/{id}", controller::getById, Role.ANYONE);
             post("/", controller::create, Role.USER);
             put("/{id}", controller::update, Role.USER);

@@ -4,12 +4,14 @@ import dat.config.HibernateConfig;
 import dat.daos.CandidateDAO;
 import dat.daos.SkillDAO;
 import dat.entities.Candidate;
+import dat.enums.SkillCategory;
 import dat.exceptions.DatabaseException;
 import io.javalin.http.Context;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.EntityNotFoundException;
 
 import java.util.List;
+import java.util.Map;
 
 public class CandidateController implements IController {
 
@@ -79,9 +81,36 @@ public class CandidateController implements IController {
         try {
             Candidate updated = candidateDAO.linkSkillToCandidate(candidateId, skillId);
             ctx.json(updated);
-            ctx.status(200); // OK
+            ctx.status(200);
         } catch (Exception e) {
             throw new DatabaseException(500, "Could not link candidate and skill", e);
         }
     }
+
+    public void getFilteredCandidates(Context ctx) {
+        List<Candidate> candidates = candidateDAO.getAll();
+        String categoryParam = ctx.queryParam("category");
+        if (categoryParam != null && !categoryParam.isBlank()) {
+            try {
+                SkillCategory category = SkillCategory.valueOf(categoryParam.toUpperCase());
+                candidates = candidates.stream()
+                        .filter(candidate -> candidate.getSkillLinks().stream()
+                                .anyMatch(link -> link.getSkill().getCategory() == category))
+                        .toList();
+                ctx.json(candidates);
+                ctx.status(200);
+            } catch (IllegalArgumentException e) {
+                ctx.status(400);
+                ctx.json(Map.of(
+                        "status", 400,
+                        "error", "Invalid category: " + categoryParam
+                ));
+                return;
+            }
+        } else {
+            ctx.json(candidates);
+            ctx.status(200);
+        }
+    }
+
 }
