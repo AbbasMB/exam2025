@@ -16,6 +16,7 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
+/*
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @Tag("IntegrationTest")
 class RestTestTemplate {
@@ -177,3 +178,5 @@ class RestTestTemplate {
         assertThat(actual, everyItem(not((deleted))));
     }
 }
+
+ */

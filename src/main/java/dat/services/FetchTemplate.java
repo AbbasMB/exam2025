@@ -1,7 +1,5 @@
 package dat.services;
 
-import dat.entities.Example;
-
 public class FetchTemplate {
     private final FetchTools fetchTools;
 
