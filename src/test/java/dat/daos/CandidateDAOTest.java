@@ -62,17 +62,10 @@ class CandidateDAOTest {
 
     @Test
     void readAll() {
-        List<String> expectedNames = CandidatePopulator.fetch().stream()
-                .map(Candidate::getName)
-                .toList();
-
-        List<String> actualNames = dao.getAll().stream()
-                .map(Candidate::getName)
-                .toList();
-
-        assertThat(actualNames, containsInAnyOrder(expectedNames.toArray()));
+        List<Candidate> expected = CandidatePopulator.fetch();
+        List<Candidate> actual = dao.getAll();
+        assertThat(actual, containsInAnyOrder(expected.toArray()));
     }
-
 
     @Test
     void create() {
