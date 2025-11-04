@@ -1,13 +1,12 @@
 package dat.exceptions;
 
 public class DatabaseException extends RuntimeException {
-    private int code;
 
-    public DatabaseException(int code, String msg){
-        super(msg);
-        this.code = code;
+    public DatabaseException(String message) {
+        super(message);
     }
-    public int getCode(){
-        return code;
+
+    public DatabaseException(String message, Throwable cause) {
+        super(message, cause);
     }
 }
